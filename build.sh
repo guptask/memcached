@@ -3,4 +3,4 @@
 ./autogen.sh
 ./configure CFLAGS=" --param=min-pagesize=0"
 make -j"$(nproc)"
-sudo make install
+#sudo make install

@@ -38,6 +38,8 @@ doc/protocol-binary.txt
 /version.m4
 /version.num
 /testapp
+/micro-client
+/micro-server
 /timedrun
 /doc/doxy
 /memcached.spec

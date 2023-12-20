@@ -1,10 +1,14 @@
 bin_PROGRAMS = memcached
 pkginclude_HEADERS = protocol_binary.h
-noinst_PROGRAMS = memcached-debug sizes testapp timedrun
+noinst_PROGRAMS = memcached-debug sizes testapp micro-client micro-server timedrun
 
 BUILT_SOURCES=
 
 testapp_SOURCES = testapp.c util.c util.h stats_prefix.c stats_prefix.h jenkins_hash.c murmur3_hash.c hash.h cache.c
+
+micro_server_SOURCES = micro_server.c util.c
+
+micro_client_SOURCES = micro_client.c util.c
 
 timedrun_SOURCES = timedrun.c
 
