@@ -185,12 +185,12 @@ int main(int argc, char **argv) {
   }
   printf("\n");
 
-  send_ascii_command(con, "shutdown\r\n");
-  /* verify that the server closed the connection */
-  if (con->read(con, buffer, sizeof(buffer))) {
-    fprintf(stderr, "Unable to shutdown the server.\n");
-    abort();
-  }
+  //send_ascii_command(con, "shutdown\r\n");
+  ///* verify that the server closed the connection */
+  //if (con->read(con, buffer, sizeof(buffer))) {
+  //  fprintf(stderr, "Unable to shutdown the server.\n");
+  //  abort();
+  //}
   close_conn(con);
 
   return 0;
