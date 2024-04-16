@@ -16,7 +16,7 @@
 
 #include "util.h"
 
-static pid_t start_server(in_port_t *port_out, bool daemon, int timeout) {
+static pid_t start_server(in_port_t *port_out, char *thread_cnt, char *timeout) {
   char environment[80];
   snprintf(environment, sizeof(environment),
              "MEMCACHED_PORT_FILENAME=/tmp/ports.%lu", (long)getpid());
@@ -34,31 +34,24 @@ static pid_t start_server(in_port_t *port_out, bool daemon, int timeout) {
     /* Child */
     char *argv[24];
     int arg = 0;
-    char tmo[24];
-    snprintf(tmo, sizeof(tmo), "%u", timeout);
 
     putenv(environment);
 
-    if (!daemon) {
-      argv[arg++] = (char*)"./timedrun";
-      argv[arg++] = tmo;
-    }
+    argv[arg++] = (char*)"./timedrun";
+    argv[arg++] = timeout;
     argv[arg++] = (char*)"./memcached";
     argv[arg++] = (char*)"-A";
     argv[arg++] = (char*)"-p";
     argv[arg++] = (char*)"-1";
     argv[arg++] = (char*)"-U";
     argv[arg++] = (char*)"0";
+    argv[arg++] = (char*)"-t";
+    argv[arg++] = thread_cnt;
 
     /* Handle rpmbuild and the like doing this as root */
     if (getuid() == 0) {
       argv[arg++] = (char*)"-u";
       argv[arg++] = (char*)"root";
-    }
-    if (daemon) {
-      argv[arg++] = (char*)"-d";
-      argv[arg++] = (char*)"-P";
-      argv[arg++] = pid_file;
     }
     argv[arg++] = NULL;
     assert(execv(argv[0], argv) != -1);
@@ -87,43 +80,18 @@ static pid_t start_server(in_port_t *port_out, bool daemon, int timeout) {
   fclose(fp);
   assert(remove(filename) == 0);
 
-  if (daemon) {
-    /* loop and wait for the pid file.. There is a potential race
-     * condition that the server just created the file but isn't
-     * finished writing the content, so we loop a few times
-     * reading as well
-     */
-    while (access(pid_file, F_OK) == -1) {
-      usleep(10);
-    }
-
-    fp = fopen(pid_file, "r");
-    if (fp == NULL) {
-      fprintf(stderr, "Failed to open pid file: %s\n", strerror(errno));
-      assert(false);
-    }
-
-    /* Avoid race by retrying 20 times */
-    for (int x = 0; x < 20 && fgets(buffer, sizeof(buffer), fp) == NULL; x++) {
-      usleep(10);
-    }
-    fclose(fp);
-
-    int32_t val;
-    assert(safe_strtol(buffer, &val));
-    pid = (pid_t)val;
-  }
   return pid;
 }
 
 int main(int argc, char **argv) {
-  if (argc != 2) {
-    fprintf(stderr, "Micro server requires the following args - time_to_live(secs)\n");
+  if (argc != 3) {
+    fprintf(stderr, "Micro server requires TWO args - thread count, time_to_live(secs)\n");
     abort();
   }
-  int ttl = atoi(argv[1]);
+  char *thread_cnt = argv[1];
+  char *timeout    = argv[2];
   in_port_t port;
-  pid_t server_pid = start_server(&port, false, ttl);
+  pid_t server_pid = start_server(&port, thread_cnt, timeout);
   assert(kill(server_pid, 0) == 0);
   printf("Server started at port %d.\n", port);
   return 0;
